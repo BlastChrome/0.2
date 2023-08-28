@@ -68,37 +68,37 @@
                     </p>
                 </div>
                 <div>
-                    <button id="reset" class="button button-3 button-primary">
-                        <img id="reset-icon" src="/src/images/icon-restart.svg" alt="">
+                    <button data-reset="reset" id="reset" class="button button-3 button-primary">
+                        <img data-reset="reset" id="reset-icon" src="/src/images/icon-restart.svg" alt="">
                     </button>
                 </div>
             </div>
             <div class="row row-1">
-                <div data-col="0" data-row="0" class="cell col-cell-1 empty" id="cell-0"></div>
-                <div data-col="1" data-row="0" class="cell col-cell-2 empty" id="cell-1"></div>
-                <div data-col="2" data-row="0" class="cell col-cell-3 empty" id="cell-2"></div>
+                <div data-cell="1" data-row="0" class="cell col-cell-1 empty" id="cell-0"></div>
+                <div data-cell="2" data-row="0" class="cell col-cell-2 empty" id="cell-1"></div>
+                <div data-cell="3" data-row="0" class="cell col-cell-3 empty" id="cell-2"></div>
             </div>
             <div class="row row-2">
-                <div data-col="0" data-row="1" class="cell col-cell-1 empty" id="cell-3"></div>
-                <div data-col="1" data-row="1" class="cell col-cell-2 empty" id="cell-4"></div>
-                <div data-col="2" data-row="1" class="cell col-cell-4 empty" id="cell-5"></div>
+                <div data-cell="4" data-row="1" class="cell col-cell-1 empty" id="cell-3"></div>
+                <div data-cell="5" data-row="1" class="cell col-cell-2 empty" id="cell-4"></div>
+                <div data-cell="6" data-row="1" class="cell col-cell-4 empty" id="cell-5"></div>
             </div>
             <div class="row row-3">
-                <div data-col="0" data-row="2" class="cell col-cell-1 empty" id="cell-6"></div>
-                <div data-col="1" data-row="2" class="cell col-cell-2 empty" id="cell-7"></div>
-                <div data-col="2" data-row="2" class="cell col-cell-3 empty" id="cell-8"></div>
+                <div data-cell="7" data-row="2" class="cell col-cell-1 empty" id="cell-6"></div>
+                <div data-cell="8" data-row="2" class="cell col-cell-2 empty" id="cell-7"></div>
+                <div data-cell="9" data-row="2" class="cell col-cell-3 empty" id="cell-8"></div>
             </div>
             <div id="bottom-display">
-                <div id="p1-turns" class="">
-                    <p id="p1-turns-text" class="top-text">O (P1)</p>
+                <div id="p1-wins">
+                    <p id="p1-wins-text" class="top-text">(P1)</p>
                     <p id="p1-turns-count" class="bottom-text"><strong>0</strong></p>
                 </div>
                 <div id="ties">
                     <p id="ties-text" class="top-text">Ties</p>
                     <p id="ties-count" class="bottom-text"><strong>0</strong></p>
                 </div>
-                <div id="p2-turns" class="">
-                    <p id="p2-turns-text" class="top-text">X (P2)</p>
+                <div id="p2-wins">
+                    <p id="p2-wins-text" class="top-text">(P2)</p>
                     <p id="p2-turns-count" class="bottom-text"><strong>0</strong></p>
                 </div>
             </div>
@@ -116,9 +116,9 @@
                 <p id="main-text" class="default"></p>
             </div>
             <div class="button-wrapper">
-                <button id="quit-button" class="button secondary-2">
+                <button id="quit-button" class="button secondary-2" data-banner-btn="deny">
                 </button>
-                <button id="next-round-button" class="button button-1 button-primary">
+                <button id="next-round-button" class="button button-1 button-primary" data-banner-btn="confirm">
                 </button>
             </div>
         </div>
