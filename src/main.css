@@ -172,6 +172,14 @@ h1 {
     width: 33% !important;
 }
 
+#game #top-display svg.shrink {
+    animation: shrink 0.3s ease-in-out forwards;
+}
+
+#game #top-display svg:hover {
+    transform: scale(0);
+}
+
 #game #turn-display #turn-text {
     margin: 0;
     color: var(--dark-silver);
@@ -484,6 +492,28 @@ h1 {
     to {
         transform: translateX(0);
         opacity: 1;
+    }
+}
+
+@keyframes shrink {
+    from {
+        transform: scale(1);
+    }
+
+    to {
+        transform: scale(0);
+        display: none;
+    }
+}
+
+@keyframes grow {
+    from {
+        transform: scale(0);
+    }
+
+    to {
+        transform: scale(1);
+        display: none;
     }
 }
 

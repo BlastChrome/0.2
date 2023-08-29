@@ -3,12 +3,13 @@
   given default values, that (can) be overwritten with the newgame module
 */
 
-const playerFactory = (mark = '', pNumber = '') => {
+const playerFactory = (mark = '', pNumber = '', isTurn = false) => {
   //private variables 
   let _pNumber = pNumber;
   let _mark = mark;
   let _numberOfMoves = 0;
   let _wins = 0;
+  let _isTurn = isTurn;
   let _moves = [
     '', '', '',
     '', '', '',
@@ -23,11 +24,13 @@ const playerFactory = (mark = '', pNumber = '') => {
   const getPNumber = () => _pNumber;
   const setPNumber = pNumber => _pNumber = pNumber;
   const getState = () => `${getPNumber()} [Mark:${getMark()}]`;
-  return { setMark, setPNumber, getState, getMark, getWins, addWins, resetWins };
+  const getTurn = () => _isTurn;
+  const switchTurn = () => _isTurn = !_isTurn;
+  return { setMark, setPNumber, getState, getMark, getWins, addWins, resetWins, switchTurn, getTurn };
 }
 
-const player1 = playerFactory('O', 'P1');
-const player2 = playerFactory('X', 'P2')
+const player1 = playerFactory('o', 'P1', true);
+const player2 = playerFactory('x', 'P2', false);
 
 const newGameModule = (() => {
   //cache dom 
@@ -79,12 +82,12 @@ const newGameModule = (() => {
     const checkedValue = e.target.checked;
     if (checkedValue) {
       //set p1 => X, and p2 => O 
-      player1.setMark('X');
-      player2.setMark('O');
+      player1.setMark('x');
+      player2.setMark('o');
     } else {
       //set p1 => O, and p2 => X
-      player1.setMark('O');
-      player2.setMark('X');
+      player1.setMark('o');
+      player2.setMark('x');
     }
   }
 
@@ -92,51 +95,34 @@ const newGameModule = (() => {
 })()
 
 const GameBoardModule = (() => {
-  const winCons = ['123', '456', '789', '147', '258', '369', '159', '357']
+
+  const winCons = ['012', '345', '678', '036', '147', '258', '048', '246']
 
   const init = (mode) => {
-    if (mode == "vsPlayer") {
-      console.log("Gameboard Module Initialized: vsPlayer Mode")
-    }
-    else if (mode == "vsCpu") {
-      console.log("Gameboard Module Initialized: vsCpu Mode")
-    } else {
-      console.log("Error: Mode Not Defined")
-      return;
-    }
     setUpGameDisplay()
     bindEvents()
+    if (mode == "vsPlayer") {
+
+    }
+    else if (mode == "vsCpu") {
+
+    }
+    else {
+      return;
+    }
   }
 
   const die = () => {
     console.log("Gameboard Module Killed");
     unbindEvents();
-    resetGameDisplay();
-  }
-
-  const setUpGameDisplay = () => {
-    //reset the previous Display 
-    resetGameDisplay();
-    const { p1WinDisplay, p1WinDisplayText, p2WinDisplay, p2WinDisplayText } = cacheDOM();
-    p1WinDisplay.classList.add(player1.getMark().toLowerCase());
-    p2WinDisplay.classList.add(player2.getMark().toLowerCase());
-    p1WinDisplayText.innerText += player1.getMark();
-    p2WinDisplayText.innerText += player2.getMark();
-  }
-
-  const resetGameDisplay = () => {
-    const { p1WinDisplay, p1WinDisplayText, p2WinDisplay, p2WinDisplayText } = cacheDOM();
-    p1WinDisplay.classList.remove('x');
-    p1WinDisplay.classList.remove('o');
-    p2WinDisplay.classList.remove('x');
-    p2WinDisplay.classList.remove('o');
-    p1WinDisplayText.innerText = "(P1)";
-    p2WinDisplayText.innerText = "(P2)";
+    resetScoreDisplay();
+    resetHoverEffects();
   }
 
   const cacheDOM = () => {
     const cells = document.querySelectorAll(".cell");
     const turnDisplay = document.querySelector("#turn-display");
+    const turnDisplayIcons = document.querySelectorAll(".turn-icon")
     const resetBtn = document.querySelector("#reset");
     const p1WinDisplay = document.querySelector("#p1-wins");
     const p1WinDisplayText = document.querySelector("#p1-wins-text")
@@ -146,7 +132,7 @@ const GameBoardModule = (() => {
     const tieDisplayText = document.querySelector("#ties-count");
 
     return {
-      cells, turnDisplay, resetBtn, p1WinDisplay, p1WinDisplayText, p2WinDisplay, p2WinDisplayText, tieDisplay, tieDisplayText
+      cells, turnDisplay, turnDisplayIcons, resetBtn, p1WinDisplay, p1WinDisplayText, p2WinDisplay, p2WinDisplayText, tieDisplay, tieDisplayText
     }
   }
 
@@ -166,7 +152,15 @@ const GameBoardModule = (() => {
     const clickedItem = e.target;
     //determine if the clicked target is a board cell, or the reset button 
     if (clickedItem.getAttribute("data-cell")) {
-      console.log(clickedItem.getAttribute("data-cell"));
+      if (player1.getTurn()) {
+        clickedItem.classList.add(`${player1.getMark()}-taken`);
+        clickedItem.classList.remove("empty");
+      } else {
+        clickedItem.classList.add(`${player2.getMark()}-taken`);
+        clickedItem.classList.remove("empty");
+      }
+      player1.switchTurn();
+      player2.switchTurn();
     } else if (clickedItem.getAttribute("data-reset")) {
       MessageBannerModule.init();
       MessageBannerModule.updateBanner("Quit?", "Do you want to quit the game?", "Yes", "No");
@@ -174,17 +168,101 @@ const GameBoardModule = (() => {
     }
   }
 
+  const setUpGameDisplay = () => {
+    //reset the previous Display 
+    resetScoreDisplay();
+    updateBoardDisplay();
+    updateBoardHoverEffects();
+    updateTurnDisplay();
+  }
+
+  const updateBoardDisplay = () => {
+    const { p1WinDisplay, p1WinDisplayText, p2WinDisplay, p2WinDisplayText } = cacheDOM();
+    p1WinDisplay.classList.add(player1.getMark());
+    p2WinDisplay.classList.add(player2.getMark());
+    p1WinDisplayText.innerText += player1.getMark();
+    p2WinDisplayText.innerText += player2.getMark();
+  }
+
+  const updateBoardHoverEffects = () => {
+    resetHoverEffects();
+    const { cells } = cacheDOM();
+
+    //if it's player ones turn, add the p1 hover effects 
+    if (player1.getTurn()) {
+      cells.forEach(cell => {
+        cell.classList.remove("empty")
+        cell.classList.add(`${player1.getMark()}-space`);
+      })
+    } else {
+      cells.forEach(cell => {
+        cell.classList.remove("empty")
+        cell.classList.add(`${player2.getMark()}-space`)
+      })
+    }
+  }
+
+  const updateTurnDisplay = () => {
+    resetTurnDisplay()
+    const { turnDisplayIcons } = cacheDOM();
+    if (player1.getTurn()) {
+      turnDisplayIcons.forEach(icon => {
+        if (icon.classList.contains(`${player1.getMark()}-turn-display`)) {
+          icon.classList.add("grow");
+          icon.classList.remove("shrink");
+        }
+      })
+    } else {
+      turnDisplayIcons.forEach(icon => {
+        if (icon.classList.contains(`${player2.getMark()}-turn-display`)) {
+          icon.classList.add("grow");
+          icon.classList.remove("shrink");
+        }
+      })
+    }
+  }
+
+  const resetTurnDisplay = () => {
+    const { turnDisplayIcons } = cacheDOM();
+    turnDisplayIcons.forEach((icon) => {
+      icon.classList.remove("grow");
+      icon.classList.add("shrink");
+    })
+  }
+
+  const resetHoverEffects = () => {
+    const { cells } = cacheDOM();
+    cells.forEach(cell => {
+      cell.classList.remove("o-space");
+      cell.classList.remove("x-space");
+      cell.classList.add("empty");
+    })
+  }
+
+  const resetScoreDisplay = () => {
+    const { p1WinDisplay, p1WinDisplayText, p2WinDisplay, p2WinDisplayText } = cacheDOM();
+    p1WinDisplay.classList.remove('x');
+    p1WinDisplay.classList.remove('o');
+    p2WinDisplay.classList.remove('x');
+    p2WinDisplay.classList.remove('o');
+    p1WinDisplayText.innerText = "(P1)";
+    p2WinDisplayText.innerText = "(P2)";
+  }
+
   return { init, die }
 })()
+
 const MessageBannerModule = (() => {
 
   const init = () => {
     bindEvents();
   }
+
   const die = () => {
-    console.log("message banner killed")
+    console.log("Message Banner Killed");
     unbindEvents();
   }
+
   const cacheDom = () => {
     const messageBanner = document.getElementById("message-banner");
     const bannerTitle = document.getElementById("winner-title-text")
@@ -200,6 +278,7 @@ const MessageBannerModule = (() => {
     messageBanner.classList.remove("hidden");
     messageOverlay.classList.remove("hidden");
   }
+
   const hideBanner = () => {
     const { messageBanner, messageOverlay } = cacheDom();
     messageBanner.classList.add("hidden");
@@ -238,11 +317,9 @@ const MessageBannerModule = (() => {
       GameBoardModule.die();
       die();
     }
-
   }
 
   return { init, showBanner, updateBanner }
-
 })()
 
 const UIControllerModule = (() => {
