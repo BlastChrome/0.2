@@ -11,11 +11,23 @@ const playerFactory = (mark = '', pNumber = '', isTurn = false) => {
   let _wins = 0;
   let _isTurn = isTurn;
   let _moves = [
-    '', '', '',
-    '', '', '',
-    '', '', ''
+    ['', '', ''],
+    ['', '', ''],
+    ['', '', '']
   ];
+  let counter = 0;
+  const addMove = (row, col, player1, player2) => {
 
+    if (_moves[row][col] == '') {
+      _moves[row][col] = getMark();
+      counter++
+      console.log(counter);
+    } else {
+      return;
+    }
+
+  }
+  const getMoves = () => _moves;
   const getMark = () => _mark;
   const setMark = mark => _mark = mark;
   const getWins = () => _wins;
@@ -23,14 +35,16 @@ const playerFactory = (mark = '', pNumber = '', isTurn = false) => {
   const resetWins = () => _wins = 0;
   const getPNumber = () => _pNumber;
   const setPNumber = pNumber => _pNumber = pNumber;
-  const getState = () => `${getPNumber()} [Mark:${getMark()}]`;
+  const getState = () => `${getPNumber()} [Mark:${getMark()} Moves: ${getMoves()}]`;
   const getTurn = () => _isTurn;
   const switchTurn = () => _isTurn = !_isTurn;
-  return { setMark, setPNumber, getState, getMark, getWins, addWins, resetWins, switchTurn, getTurn };
+  return { setMark, setPNumber, getState, getMark, getWins, addWins, resetWins, switchTurn, getTurn, addMove };
 }
 
 const player1 = playerFactory('o', 'P1', true);
 const player2 = playerFactory('x', 'P2', false);
+
+let lastClicker;
 
 const newGameModule = (() => {
   //cache dom 
@@ -81,11 +95,9 @@ const newGameModule = (() => {
   const markHandler = (e) => {
     const checkedValue = e.target.checked;
     if (checkedValue) {
-      //set p1 => X, and p2 => O 
       player1.setMark('x');
       player2.setMark('o');
     } else {
-      //set p1 => O, and p2 => X
       player1.setMark('o');
       player2.setMark('x');
     }
@@ -95,10 +107,20 @@ const newGameModule = (() => {
 })()
 
 const GameBoardModule = (() => {
+  let mode = '';
+
+  const saveMode = (string) => {
+    mode = string;
+  }
+  const getMode = () => mode;
+
+
 
   const winCons = ['012', '345', '678', '036', '147', '258', '048', '246']
 
   const init = (mode) => {
+    saveMode(mode);
+    console.log(mode);
     setUpGameDisplay()
     bindEvents()
     if (mode == "vsPlayer") {
@@ -117,6 +139,7 @@ const GameBoardModule = (() => {
     unbindEvents();
     resetScoreDisplay();
     resetHoverEffects();
+
   }
 
   const cacheDOM = () => {
@@ -153,23 +176,32 @@ const GameBoardModule = (() => {
     //determine if the clicked target is a board cell, or the reset button 
     if (clickedItem.getAttribute("data-cell")) {
       if (player1.getTurn()) {
-        clickedItem.classList.add(`${player1.getMark()}-taken`);
-        clickedItem.classList.remove("empty");
+        playTurn(player1, clickedItem)
+        // console.log(player1.getState())
       } else {
-        clickedItem.classList.add(`${player2.getMark()}-taken`);
-        clickedItem.classList.remove("empty");
+        playTurn(player2, clickedItem);
+        // console.log(player2.getState())
       }
-      player1.switchTurn();
-      player2.switchTurn();
+      player1.switchTurn()
+      player2.switchTurn()
+      // lastClicker = playTurn(player1, clickedItem);
+      // console.log(lastClicker);
+      updateBoardHoverEffects();
     } else if (clickedItem.getAttribute("data-reset")) {
       MessageBannerModule.init();
       MessageBannerModule.updateBanner("Quit?", "Do you want to quit the game?", "Yes", "No");
       MessageBannerModule.showBanner()
     }
   }
+  const playTurn = (player, cell) => {
+    let row = cell.getAttribute("data-row");
+    let col = cell.getAttribute("data-col");
+    player.addMove(row, col);
+    cell.classList.add(`${player.getMark()}-taken`);
+    return player;
+  }
 
   const setUpGameDisplay = () => {
-    //reset the previous Display 
     resetScoreDisplay();
     updateBoardDisplay();
     updateBoardHoverEffects();
@@ -191,12 +223,10 @@ const GameBoardModule = (() => {
     //if it's player ones turn, add the p1 hover effects 
     if (player1.getTurn()) {
       cells.forEach(cell => {
-        cell.classList.remove("empty")
         cell.classList.add(`${player1.getMark()}-space`);
       })
     } else {
       cells.forEach(cell => {
-        cell.classList.remove("empty")
         cell.classList.add(`${player2.getMark()}-space`)
       })
     }
@@ -249,7 +279,7 @@ const GameBoardModule = (() => {
     p2WinDisplayText.innerText = "(P2)";
   }
 
-  return { init, die }
+  return { init, die, getMode }
 })()
 
 const MessageBannerModule = (() => {
@@ -309,6 +339,7 @@ const MessageBannerModule = (() => {
     const clickedItem = e.target;
     if (clickedItem.getAttribute("data-banner-btn") == "deny") {
       hideBanner();
+      GameBoardModule.init(GameBoardModule.getMode())
     }
     else if (clickedItem.getAttribute("data-banner-btn") == "confirm") {
       hideBanner();
