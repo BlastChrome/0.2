@@ -10,24 +10,6 @@ const playerFactory = (mark = '', pNumber = '', isTurn = false) => {
   let _numberOfMoves = 0;
   let _wins = 0;
   let _isTurn = isTurn;
-  let _moves = [
-    ['', '', ''],
-    ['', '', ''],
-    ['', '', '']
-  ];
-  let counter = 0;
-  const addMove = (row, col, player1, player2) => {
-
-    if (_moves[row][col] == '') {
-      _moves[row][col] = getMark();
-      counter++
-      console.log(counter);
-    } else {
-      return;
-    }
-
-  }
-  const getMoves = () => _moves;
   const getMark = () => _mark;
   const setMark = mark => _mark = mark;
   const getWins = () => _wins;
@@ -38,7 +20,7 @@ const playerFactory = (mark = '', pNumber = '', isTurn = false) => {
   const getState = () => `${getPNumber()} [Mark:${getMark()} Moves: ${getMoves()}]`;
   const getTurn = () => _isTurn;
   const switchTurn = () => _isTurn = !_isTurn;
-  return { setMark, setPNumber, getState, getMark, getWins, addWins, resetWins, switchTurn, getTurn, addMove };
+  return { setMark, setPNumber, getState, getMark, getWins, addWins, resetWins, switchTurn, getTurn };
 }
 
 const player1 = playerFactory('o', 'P1', true);
@@ -117,10 +99,14 @@ const GameBoardModule = (() => {
 
 
   const winCons = ['012', '345', '678', '036', '147', '258', '048', '246']
+  const virtualBoard = [
+    ['', '', ''],
+    ['', '', ''],
+    ['', '', '']
+  ]
 
   const init = (mode) => {
     saveMode(mode);
-    console.log(mode);
     setUpGameDisplay()
     bindEvents()
     if (mode == "vsPlayer") {
@@ -173,17 +159,20 @@ const GameBoardModule = (() => {
 
   const clickHandler = (e) => {
     const clickedItem = e.target;
-    //determine if the clicked target is a board cell, or the reset button 
+    //determine if the clicked target is a board cell, or the reset button  
     if (clickedItem.getAttribute("data-cell")) {
-      if (player1.getTurn()) {
-        playTurn(player1, clickedItem)
-        // console.log(player1.getState())
+      const cell = clickedItem;
+      if (cellTaken(cell, player1) || cellTaken(cell, player2)) {
+        return;
+      } else if (player1.getTurn()) {
+        console.log(updateBoard(player1, clickedItem))
       } else {
-        playTurn(player2, clickedItem);
-        // console.log(player2.getState())
+        console.log(updateBoard(player2, clickedItem))
       }
       player1.switchTurn()
       player2.switchTurn()
+      checkVirtualBoardForWinner();
+
       // lastClicker = playTurn(player1, clickedItem);
       // console.log(lastClicker);
       updateBoardHoverEffects();
@@ -193,13 +182,29 @@ const GameBoardModule = (() => {
       MessageBannerModule.showBanner()
     }
   }
-  const playTurn = (player, cell) => {
+  const cellTaken = (cell, player) => cell.classList.contains(`${player.getMark()}-taken`) ? true : false;
+
+  const updateBoard = (player, cell) => {
     let row = cell.getAttribute("data-row");
     let col = cell.getAttribute("data-col");
-    player.addMove(row, col);
-    cell.classList.add(`${player.getMark()}-taken`);
-    return player;
+    if (virtualBoard[row][col] == '' && (virtualBoard[row][col] !== "x" || virtualBoard[row][col] !== 'o')) {
+      virtualBoard[row][col] = player.getMark();
+      cell.classList.add(`${player.getMark()}-taken`);
+      cell.clas
+    }
+    return virtualBoard;
   }
+
+
+  const checkVirtualBoardForWinner = () => {
+    // win conditions 
+    // #1 across horizontally 
+    virtualBoard.forEach((item, index) => {
+      console.log(item[index])
+      // console.log(item);
+    })
+  }
+
 
   const setUpGameDisplay = () => {
     resetScoreDisplay();
@@ -224,10 +229,12 @@ const GameBoardModule = (() => {
     if (player1.getTurn()) {
       cells.forEach(cell => {
         cell.classList.add(`${player1.getMark()}-space`);
+        cell.classList.remove(`${player2.getMark()}-space`);
       })
     } else {
       cells.forEach(cell => {
         cell.classList.add(`${player2.getMark()}-space`)
+        cell.classList.remove(`${player1.getMark()}-space`)
       })
     }
   }
