@@ -160,20 +160,34 @@ h1 {
     display: flex;
     align-items: center;
     background-color: var(--dark-navy-hover);
-    justify-content: space-around;
+    justify-content: flex-start;
+    flex-direction: column;
     padding: 13px 0px;
     border-radius: var(--border-radius);
     box-shadow: 0px 5px 0 var(--dark-navy-border);
     margin-right: 20px;
     margin-left: 20px;
+    position: relative;
+
 }
 
 #game #top-display>* {
-    width: 33% !important;
+    width: 100% !important;
+    min-height: 45px;
 }
 
 #game #top-display svg.shrink {
     animation: shrink 0.3s ease-in-out forwards;
+}
+
+#game #top-display svg.grow {
+    animation: grow 0.3s ease-in-out forwards;
+}
+
+#game #top-display svg {
+    position: absolute;
+    bottom: 5%;
+
 }
 
 #game #top-display svg:hover {
@@ -308,8 +322,6 @@ h1 {
     background-image: url(/src/images/icon-x.svg);
     background-repeat: no-repeat;
     background-position: center;
-    animation: taken 0.3s ease-in-out;
-    animation-delay: 0.3s;
     animation-direction: forwards;
 }
 
@@ -318,8 +330,6 @@ h1 {
     background-image: url(/src/images/icon-x.svg);
     background-repeat: no-repeat;
     background-position: center;
-    animation: taken 0.3s ease-in-out;
-    animation-delay: 0.3s;
     animation-direction: forwards;
 }
 
@@ -366,7 +376,6 @@ h1 {
     text-transform: uppercase;
     letter-spacing: 1.25px;
     position: relative;
-    ;
 }
 
 
@@ -502,7 +511,6 @@ h1 {
 
     to {
         transform: scale(0);
-        display: none;
     }
 }
 
@@ -513,7 +521,6 @@ h1 {
 
     to {
         transform: scale(1);
-        display: none;
     }
 }
 

@@ -4,7 +4,6 @@
 */
 
 const playerFactory = (mark = '', pNumber = '', isTurn = false) => {
-  //private variables 
   let _pNumber = pNumber;
   let _mark = mark;
   let _numberOfMoves = 0;
@@ -20,13 +19,12 @@ const playerFactory = (mark = '', pNumber = '', isTurn = false) => {
   const getState = () => `${getPNumber()} [Mark:${getMark()} Moves: ${getMoves()}]`;
   const getTurn = () => _isTurn;
   const switchTurn = () => _isTurn = !_isTurn;
-  return { setMark, setPNumber, getState, getMark, getWins, addWins, resetWins, switchTurn, getTurn };
+  const addMove = () => _numberOfMoves++;
+  return { setMark, setPNumber, getState, getMark, getWins, addWins, resetWins, switchTurn, getTurn, addMove };
 }
 
 const player1 = playerFactory('o', 'P1', true);
 const player2 = playerFactory('x', 'P2', false);
-
-let lastClicker;
 
 const newGameModule = (() => {
   //cache dom 
@@ -89,16 +87,17 @@ const newGameModule = (() => {
 })()
 
 const GameBoardModule = (() => {
+
   let mode = '';
 
   const saveMode = (string) => {
+    if (mode !== 'vsPlayer' || mode !== 'vsCPU') return;
     mode = string;
   }
+
+  const resetMode = () => mode = '';
   const getMode = () => mode;
 
-
-
-  const winCons = ['012', '345', '678', '036', '147', '258', '048', '246']
   const virtualBoard = [
     ['', '', ''],
     ['', '', ''],
@@ -123,9 +122,7 @@ const GameBoardModule = (() => {
   const die = () => {
     console.log("Gameboard Module Killed");
     unbindEvents();
-    resetScoreDisplay();
-    resetHoverEffects();
-
+    resetBoard();
   }
 
   const cacheDOM = () => {
@@ -162,45 +159,48 @@ const GameBoardModule = (() => {
     //determine if the clicked target is a board cell, or the reset button  
     if (clickedItem.getAttribute("data-cell")) {
       const cell = clickedItem;
-      if (cellTaken(cell, player1) || cellTaken(cell, player2)) {
+      if (isCellTaken(cell, player1) || isCellTaken(cell, player2)) {
         return;
       } else if (player1.getTurn()) {
-        console.log(updateBoard(player1, clickedItem))
+        playTurn(player1, cell)
       } else {
-        console.log(updateBoard(player2, clickedItem))
+        playTurn(player2, cell)
       }
-      player1.switchTurn()
-      player2.switchTurn()
-      checkVirtualBoardForWinner();
 
-      // lastClicker = playTurn(player1, clickedItem);
-      // console.log(lastClicker);
-      updateBoardHoverEffects();
     } else if (clickedItem.getAttribute("data-reset")) {
       MessageBannerModule.init();
       MessageBannerModule.updateBanner("Quit?", "Do you want to quit the game?", "Yes", "No");
       MessageBannerModule.showBanner()
     }
   }
-  const cellTaken = (cell, player) => cell.classList.contains(`${player.getMark()}-taken`) ? true : false;
 
-  const updateBoard = (player, cell) => {
+  const switchTurns = () => {
+    player1.switchTurn()
+    player2.switchTurn()
+  }
+
+  const isCellTaken = (cell, player) => cell.classList.contains(`${player.getMark()}-taken`) ? true : false;
+
+  const playTurn = (player, cell) => {
     let row = cell.getAttribute("data-row");
     let col = cell.getAttribute("data-col");
-    if (virtualBoard[row][col] == '' && (virtualBoard[row][col] !== "x" || virtualBoard[row][col] !== 'o')) {
+    if (virtualBoard[row][col] == '' && (virtualBoard[row][col] !== 'x' || virtualBoard[row][col] !== 'o')) {
       virtualBoard[row][col] = player.getMark();
       cell.classList.add(`${player.getMark()}-taken`);
-      cell.clas
+      player.addMove();
+      checkForWinner();
+      switchTurns();
+      updateBoardHoverEffects();
+      updateTurnDisplay();
     }
-    return virtualBoard;
   }
 
 
-  const checkVirtualBoardForWinner = () => {
+  const checkForWinner = () => {
     // win conditions 
     // #1 across horizontally 
     virtualBoard.forEach((item, index) => {
-      console.log(item[index])
+      console.log(item)
       // console.log(item);
     })
   }
@@ -284,6 +284,20 @@ const GameBoardModule = (() => {
     p2WinDisplay.classList.remove('o');
     p1WinDisplayText.innerText = "(P1)";
     p2WinDisplayText.innerText = "(P2)";
+  }
+  const resetBoard = () => {
+    resetScoreDisplay();
+    resetHoverEffects();
+    resetBoardCells();
+  }
+
+  const resetBoardCells = () => {
+    const { cells } = cacheDOM();
+    virtualBoard.forEach((item, index) => {
+      item[index] = '';
+    })
+    cells.forEach(cell => cell.classList.remove(`${player1.getMark()}-taken`))
+    cells.forEach(cell => cell.classList.remove(`${player2.getMark()}-taken`))
   }
 
   return { init, die, getMode }
