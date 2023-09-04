@@ -289,15 +289,21 @@ const GameBoardModule = (() => {
     resetScoreDisplay();
     resetHoverEffects();
     resetBoardCells();
+    resetVirtualBoard();
   }
 
   const resetBoardCells = () => {
     const { cells } = cacheDOM();
-    virtualBoard.forEach((item, index) => {
-      item[index] = '';
-    })
     cells.forEach(cell => cell.classList.remove(`${player1.getMark()}-taken`))
     cells.forEach(cell => cell.classList.remove(`${player2.getMark()}-taken`))
+  }
+  const resetVirtualBoard = () => {
+    for (let r = 0; r < virtualBoard.length; r++) {
+      for (let c = 0; c < virtualBoard.length; c++) {
+        virtualBoard[r][c] = '';
+        console.log(virtualBoard[r][c]);
+      }
+    }
   }
 
   return { init, die, getMode }
