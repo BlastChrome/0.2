@@ -96,7 +96,6 @@ const GameBoardModule = (() => {
     mode = string;
   }
 
-  const resetLastMode = () => mode = '';
   const getLastMode = () => mode;
 
   const virtualBoard = [
@@ -279,7 +278,7 @@ const GameBoardModule = (() => {
   }
 
   const updateScoreBoard = (player) => {
-    const { p1WinDisplay, p2WinDisplay, p1WinCountText, p2WinCountText } = cacheDOM()
+    const { p1WinDisplay, p2WinDisplay } = cacheDOM()
     const winningDisplays = [p1WinDisplay, p2WinDisplay];
     winningDisplays.forEach(display => {
       if (display.classList.contains(player.getMark())) {
@@ -372,15 +371,17 @@ const GameBoardModule = (() => {
   }
 
   const resetBoard = () => {
-    resetScoreDisplay();
-    resetHoverEffects();
     resetBoardCells();
+    resetHoverEffects();
+    resetScoreDisplay();
+    updateBoardHoverEffects();
     resetVirtualBoard();
   }
 
   const softReset = () => {
     resetBoardCells();
     resetHoverEffects();
+    updateBoardHoverEffects();
     resetVirtualBoard();
   }
 
@@ -394,7 +395,6 @@ const GameBoardModule = (() => {
     for (let r = 0; r < virtualBoard.length; r++) {
       for (let c = 0; c < virtualBoard.length; c++) {
         virtualBoard[r][c] = '';
-        console.log(virtualBoard[r][c]);
       }
     }
   }
@@ -474,11 +474,15 @@ const MessageBannerModule = (() => {
 
     }
     else if (clickedItem.getAttribute("data-banner-btn") == "confirm") {
-      if (clickedItem.innerHTML == "Play Again") {
+      if (clickedItem.innerHTML == "Yes") {
         hideBanner();
         UIControllerModule.progressToNextScreen();
         newGameModule.init();
         GameBoardModule.die();
+        die();
+      } else if (clickedItem.innerHTML == "Play Again") {
+        hideBanner();
+        GameBoardModule.softReset();
         die();
       }
     }
