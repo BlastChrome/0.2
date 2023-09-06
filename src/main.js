@@ -20,7 +20,8 @@ const playerFactory = (mark = '', pNumber = '', isTurn = false) => {
   const getTurn = () => _isTurn;
   const switchTurn = () => _isTurn = !_isTurn;
   const addMove = () => _numberOfMoves++;
-  return { setMark, setPNumber, getState, getMark, getWins, addWins, resetWins, switchTurn, getTurn, addMove };
+  const resetMoves = () => _numberOfMoves = 0;
+  return { setMark, setPNumber, getState, getMark, getWins, addWins, resetWins, switchTurn, getTurn, addMove, resetMoves, getPNumber };
 }
 
 const player1 = playerFactory('o', 'P1', true);
@@ -90,13 +91,13 @@ const GameBoardModule = (() => {
 
   let mode = '';
 
-  const saveMode = (string) => {
+  const saveLastMode = (string) => {
     if (mode !== 'vsPlayer' || mode !== 'vsCPU') return;
     mode = string;
   }
 
-  const resetMode = () => mode = '';
-  const getMode = () => mode;
+  const resetLastMode = () => mode = '';
+  const getLastMode = () => mode;
 
   const virtualBoard = [
     ['', '', ''],
@@ -105,7 +106,7 @@ const GameBoardModule = (() => {
   ]
 
   const init = (mode) => {
-    saveMode(mode);
+    saveLastMode(mode);
     setUpGameDisplay()
     bindEvents()
     if (mode == "vsPlayer") {
@@ -123,6 +124,8 @@ const GameBoardModule = (() => {
     console.log("Gameboard Module Killed");
     unbindEvents();
     resetBoard();
+    resetPlayers();
+
   }
 
   const cacheDOM = () => {
@@ -132,13 +135,15 @@ const GameBoardModule = (() => {
     const resetBtn = document.querySelector("#reset");
     const p1WinDisplay = document.querySelector("#p1-wins");
     const p1WinDisplayText = document.querySelector("#p1-wins-text")
+    const p1WinCountText = document.querySelector("#p1-wins-count");
     const p2WinDisplay = document.querySelector("#p2-wins");
     const p2WinDisplayText = document.querySelector("#p2-wins-text")
+    const p2WinCountText = document.querySelector("#p2-wins-count");
     const tieDisplay = document.querySelector("#ties");
     const tieDisplayText = document.querySelector("#ties-count");
 
     return {
-      cells, turnDisplay, turnDisplayIcons, resetBtn, p1WinDisplay, p1WinDisplayText, p2WinDisplay, p2WinDisplayText, tieDisplay, tieDisplayText
+      cells, turnDisplay, turnDisplayIcons, resetBtn, p1WinDisplay, p1WinDisplayText, p2WinDisplay, p2WinDisplayText, tieDisplay, tieDisplayText, p1WinCountText, p2WinCountText
     }
   }
 
@@ -188,23 +193,100 @@ const GameBoardModule = (() => {
       virtualBoard[row][col] = player.getMark();
       cell.classList.add(`${player.getMark()}-taken`);
       player.addMove();
-      checkForWinner();
+      checkForWinner(player);
       switchTurns();
       updateBoardHoverEffects();
       updateTurnDisplay();
     }
   }
 
+  const checkForWinner = (player) => {
+    isWinner = false;
 
-  const checkForWinner = () => {
-    // win conditions 
-    // #1 across horizontally 
-    virtualBoard.forEach((item, index) => {
-      console.log(item)
-      // console.log(item);
-    })
+    if (
+      virtualBoard[0][0] == `${player.getMark()}` &&
+      virtualBoard[0][1] == `${player.getMark()}` &&
+      virtualBoard[0][2] == `${player.getMark()}`
+    ) {
+      player.addWins();
+      isWinner = true;
+    }
+    else if (
+      virtualBoard[1][0] == `${player.getMark()}` &&
+      virtualBoard[1][1] == `${player.getMark()}` &&
+      virtualBoard[1][2] == `${player.getMark()}`
+    ) {
+      player.addWins();
+      isWinner = true;
+    }
+    else if (
+      virtualBoard[2][0] == `${player.getMark()}` &&
+      virtualBoard[2][1] == `${player.getMark()}` &&
+      virtualBoard[2][2] == `${player.getMark()}`
+    ) {
+      player.addWins();
+      isWinner = true;
+    }
+    else if (
+      virtualBoard[0][0] == `${player.getMark()}` &&
+      virtualBoard[1][0] == `${player.getMark()}` &&
+      virtualBoard[2][0] == `${player.getMark()}`
+    ) {
+      player.addWins();
+      isWinner = true;
+    }
+    else if (
+      virtualBoard[0][1] == `${player.getMark()}` &&
+      virtualBoard[1][1] == `${player.getMark()}` &&
+      virtualBoard[2][1] == `${player.getMark()}`
+    ) {
+      player.addWins();
+      isWinner = true;
+    }
+    else if (
+      virtualBoard[0][2] == `${player.getMark()}` &&
+      virtualBoard[1][2] == `${player.getMark()}` &&
+      virtualBoard[2][2] == `${player.getMark()}`
+    ) {
+      player.addWins();
+      isWinner = true;
+    }
+    else if (
+      virtualBoard[0][0] == `${player.getMark()}` &&
+      virtualBoard[1][1] == `${player.getMark()}` &&
+      virtualBoard[2][2] == `${player.getMark()}`
+    ) {
+      player.addWins();
+      isWinner = true;
+    }
+    else if (
+      virtualBoard[0][2] == `${player.getMark()}` &&
+      virtualBoard[1][1] == `${player.getMark()}` &&
+      virtualBoard[2][0] == `${player.getMark()}`
+    ) {
+      player.addWins();
+      isWinner = true;
+    }
+    if (isWinner) {
+      updateScoreBoard(player);
+      resetHoverEffects()
+      MessageBannerModule.init();
+      MessageBannerModule.addWinningPlayer(player);
+      MessageBannerModule.updateBanner("Winner!", `${player.getPNumber()} Takes The Round!`, "Play Again", "Reset");
+      MessageBannerModule.showBanner()
+    }
+
   }
 
+  const updateScoreBoard = (player) => {
+    const { p1WinDisplay, p2WinDisplay, p1WinCountText, p2WinCountText } = cacheDOM()
+    const winningDisplays = [p1WinDisplay, p2WinDisplay];
+    winningDisplays.forEach(display => {
+      if (display.classList.contains(player.getMark())) {
+        display.querySelector("strong").innerHTML = player.getWins();
+      }
+    })
+  }
 
   const setUpGameDisplay = () => {
     resetScoreDisplay();
@@ -277,18 +359,28 @@ const GameBoardModule = (() => {
   }
 
   const resetScoreDisplay = () => {
-    const { p1WinDisplay, p1WinDisplayText, p2WinDisplay, p2WinDisplayText } = cacheDOM();
+    const { p1WinDisplay, p1WinDisplayText, p2WinDisplay, p2WinDisplayText, p1WinCountText, p2WinCountText } = cacheDOM();
     p1WinDisplay.classList.remove('x');
     p1WinDisplay.classList.remove('o');
     p2WinDisplay.classList.remove('x');
     p2WinDisplay.classList.remove('o');
     p1WinDisplayText.innerText = "(P1)";
     p2WinDisplayText.innerText = "(P2)";
+    p1WinCountText.querySelector("strong").innerText = "0";
+    p2WinCountText.querySelector("strong").innerText = "0";
+
   }
+
   const resetBoard = () => {
     resetScoreDisplay();
     resetHoverEffects();
     resetBoardCells();
+    resetVirtualBoard();
+  }
+
+  const softReset = () => {
+    resetBoardCells();
+    resetHoverEffects();
     resetVirtualBoard();
   }
 
@@ -297,6 +389,7 @@ const GameBoardModule = (() => {
     cells.forEach(cell => cell.classList.remove(`${player1.getMark()}-taken`))
     cells.forEach(cell => cell.classList.remove(`${player2.getMark()}-taken`))
   }
+
   const resetVirtualBoard = () => {
     for (let r = 0; r < virtualBoard.length; r++) {
       for (let c = 0; c < virtualBoard.length; c++) {
@@ -306,7 +399,14 @@ const GameBoardModule = (() => {
     }
   }
 
-  return { init, die, getMode }
+  const resetPlayers = () => {
+    player1.resetWins();
+    player1.resetMoves();
+    player2.resetWins();
+    player2.resetMoves();
+  }
+
+  return { init, die, softReset, getLastMode }
 })()
 
 const MessageBannerModule = (() => {
@@ -318,6 +418,7 @@ const MessageBannerModule = (() => {
   const die = () => {
     console.log("Message Banner Killed");
     unbindEvents();
+    removeWinningPlayer();
   }
 
   const cacheDom = () => {
@@ -365,19 +466,38 @@ const MessageBannerModule = (() => {
   const clickHandler = (e) => {
     const clickedItem = e.target;
     if (clickedItem.getAttribute("data-banner-btn") == "deny") {
-      hideBanner();
-      GameBoardModule.init(GameBoardModule.getMode())
+      if (clickedItem.innerHTML == "Reset") {
+        hideBanner();
+        GameBoardModule.softReset();
+        GameBoardModule.init(GameBoardModule.getLastMode());
+      }
+
     }
     else if (clickedItem.getAttribute("data-banner-btn") == "confirm") {
-      hideBanner();
-      UIControllerModule.progressToNextScreen();
-      newGameModule.init();
-      GameBoardModule.die();
-      die();
+      if (clickedItem.innerHTML == "Play Again") {
+        hideBanner();
+        UIControllerModule.progressToNextScreen();
+        newGameModule.init();
+        GameBoardModule.die();
+        die();
+      }
     }
   }
 
-  return { init, showBanner, updateBanner }
+  const addWinningPlayer = (player) => {
+    const { bannerMessage } = cacheDom();
+    bannerMessage.classList.remove("default");
+    bannerMessage.classList.add(`${player.getMark()}-wins`);
+  }
+
+  const removeWinningPlayer = () => {
+    const { bannerMessage } = cacheDom();
+    bannerMessage.classList.remove("o-wins");
+    bannerMessage.classList.remove("x-wins");
+    bannerMessage.classList.add("default");
+  }
+
+  return { init, showBanner, updateBanner, addWinningPlayer, removeWinningPlayer }
 })()
 
 const UIControllerModule = (() => {
