@@ -90,6 +90,9 @@ const newGameModule = (() => {
 const GameBoardModule = (() => {
 
   let mode = '';
+  let numberOfMoves = 0;
+  let draws = 0;
+  const DRAW_LIMIT = 9;
 
   const saveLastMode = (string) => {
     if (mode !== 'vsPlayer' || mode !== 'vsCPU') return;
@@ -122,7 +125,7 @@ const GameBoardModule = (() => {
   const die = () => {
     console.log("Gameboard Module Killed");
     unbindEvents();
-    resetBoard();
+    hardReset();
     resetPlayers();
 
   }
@@ -192,7 +195,8 @@ const GameBoardModule = (() => {
       virtualBoard[row][col] = player.getMark();
       cell.classList.add(`${player.getMark()}-taken`);
       player.addMove();
-      checkForWinner(player);
+      addBoardMoves();
+      checkForWinner(player, numberOfMoves);
       switchTurns();
       updateBoardHoverEffects();
       updateTurnDisplay();
@@ -200,8 +204,9 @@ const GameBoardModule = (() => {
   }
 
   const checkForWinner = (player) => {
-    isWinner = false;
-
+    let isWinner = false;
+    let isDraw = false;
+    numberOfMoves >= DRAW_LIMIT ? isDraw = true : isDraw = false;
     if (
       virtualBoard[0][0] == `${player.getMark()}` &&
       virtualBoard[0][1] == `${player.getMark()}` &&
@@ -273,6 +278,15 @@ const GameBoardModule = (() => {
       MessageBannerModule.addWinningPlayer(player);
       MessageBannerModule.updateBanner("Winner!", `${player.getPNumber()} Takes The Round!`, "Play Again", "Reset");
       MessageBannerModule.showBanner()
+      return;
+    } else if (isDraw) {
+      draws++;
+      updateDrawBoard();
+      resetHoverEffects();
+      MessageBannerModule.init();
+      MessageBannerModule.updateBanner("Draw", "Tie Game!", "Play Again", "Reset");
+      MessageBannerModule.showBanner();
+      return;
     }
 
   }
@@ -285,6 +299,15 @@ const GameBoardModule = (() => {
         display.querySelector("strong").innerHTML = player.getWins();
       }
     })
+  }
+  const updateDrawBoard = () => {
+    const { tieDisplay } = cacheDOM();
+    tieDisplay.querySelector("strong").innerHTML = draws;
+  }
+
+  const resetDrawBoard = () => {
+    const { tieDisplay } = cacheDOM();
+    tieDisplay.querySelector("strong").innerHTML = 0;
   }
 
   const setUpGameDisplay = () => {
@@ -370,12 +393,14 @@ const GameBoardModule = (() => {
 
   }
 
-  const resetBoard = () => {
+  const hardReset = () => {
     resetBoardCells();
     resetHoverEffects();
     resetScoreDisplay();
     updateBoardHoverEffects();
     resetVirtualBoard();
+    resetBoardMoves();
+    resetDrawBoard();
   }
 
   const softReset = () => {
@@ -383,6 +408,7 @@ const GameBoardModule = (() => {
     resetHoverEffects();
     updateBoardHoverEffects();
     resetVirtualBoard();
+    resetBoardMoves();
   }
 
   const resetBoardCells = () => {
@@ -406,7 +432,15 @@ const GameBoardModule = (() => {
     player2.resetMoves();
   }
 
-  return { init, die, softReset, getLastMode }
+  const resetBoardMoves = () => {
+    numberOfMoves = 0;
+  }
+
+  const addBoardMoves = () => {
+    numberOfMoves++;
+  }
+
+  return { init, die, softReset, hardReset, getLastMode }
 })()
 
 const MessageBannerModule = (() => {
@@ -468,22 +502,24 @@ const MessageBannerModule = (() => {
     if (clickedItem.getAttribute("data-banner-btn") == "deny") {
       if (clickedItem.innerHTML == "Reset") {
         hideBanner();
-        GameBoardModule.softReset();
+        die()
+        GameBoardModule.hardReset();
         GameBoardModule.init(GameBoardModule.getLastMode());
       }
-
     }
     else if (clickedItem.getAttribute("data-banner-btn") == "confirm") {
       if (clickedItem.innerHTML == "Yes") {
         hideBanner();
+        die()
         UIControllerModule.progressToNextScreen();
         newGameModule.init();
         GameBoardModule.die();
         die();
       } else if (clickedItem.innerHTML == "Play Again") {
         hideBanner();
-        GameBoardModule.softReset();
         die();
+        GameBoardModule.softReset();
+
       }
     }
   }
