@@ -45,7 +45,6 @@ const newGameModule = (() => {
   // kill the module events after the screen changes
   const die = () => {
     unbindEvents();
-    console.log('New Game Module Killed');
   }
 
   //bind the events to the modules clickable elements
@@ -89,14 +88,15 @@ const newGameModule = (() => {
 
 const GameBoardModule = (() => {
 
-  let mode = '';
+  let mode = 'vsPlayer';
   let numberOfMoves = 0;
   let draws = 0;
   const DRAW_LIMIT = 9;
+  let isWinner = false;
+  let isDraw = false;
 
   const saveLastMode = (string) => {
-    if (mode !== 'vsPlayer' || mode !== 'vsCPU') return;
-    mode = string;
+    if (mode == 'vsPlayer' || mode == 'vsCPU') mode = string;
   }
 
   const getLastMode = () => mode;
@@ -107,27 +107,21 @@ const GameBoardModule = (() => {
     ['', '', '']
   ]
 
-  const init = (mode) => {
-    saveLastMode(mode);
+  const init = (string) => {
+    saveLastMode(string);
+    saveLastMode(getLastMode());
     setUpGameDisplay()
-    bindEvents()
-    if (mode == "vsPlayer") {
-
-    }
-    else if (mode == "vsCpu") {
-
-    }
-    else {
-      return;
-    }
+    bindEvents();
   }
 
   const die = () => {
-    console.log("Gameboard Module Killed");
     unbindEvents();
     hardReset();
-    resetPlayers();
+  }
 
+  const resetDrawWinner = () => {
+    isWinner = false;
+    isDraw = false;
   }
 
   const cacheDOM = () => {
@@ -162,16 +156,22 @@ const GameBoardModule = (() => {
   }
 
   const clickHandler = (e) => {
+
     const clickedItem = e.target;
     //determine if the clicked target is a board cell, or the reset button  
     if (clickedItem.getAttribute("data-cell")) {
       const cell = clickedItem;
-      if (isCellTaken(cell, player1) || isCellTaken(cell, player2)) {
-        return;
-      } else if (player1.getTurn()) {
-        playTurn(player1, cell)
-      } else {
-        playTurn(player2, cell)
+      if (getLastMode() == "vsPlayer") {
+        if (isCellTaken(cell, player1) || isCellTaken(cell, player2)) {
+          return;
+        } else if (player1.getTurn()) {
+          playTurnVsPlayer(player1, cell)
+        } else {
+          playTurnVsPlayer(player2, cell)
+        }
+      } else if (getLastMode() == "vsCpu") {
+        playTurnVsPlayer(player1, cell);
+        playTurnVsCpu(player2);
       }
 
     } else if (clickedItem.getAttribute("data-reset")) {
@@ -188,7 +188,7 @@ const GameBoardModule = (() => {
 
   const isCellTaken = (cell, player) => cell.classList.contains(`${player.getMark()}-taken`) ? true : false;
 
-  const playTurn = (player, cell) => {
+  const playTurnVsPlayer = (player, cell) => {
     let row = cell.getAttribute("data-row");
     let col = cell.getAttribute("data-col");
     if (virtualBoard[row][col] == '' && (virtualBoard[row][col] !== 'x' || virtualBoard[row][col] !== 'o')) {
@@ -203,9 +203,34 @@ const GameBoardModule = (() => {
     }
   }
 
+  const playTurnVsCpu = () => {
+    const { cells } = cacheDOM();
+    //return an array of the open cells, if there are none it's a draw 
+    let openCells = Array.from(cells).filter((cell) => !((isCellTaken(cell, player1)) || (isCellTaken(cell, player2))));
+    if (openCells.length == 0) {
+      return;
+    } else if (checkForWinner(player2)) {
+      return;
+    }
+    else {
+      var cellToPlay = openCells[Math.floor(Math.random() * openCells.length)];
+      let row = cellToPlay.getAttribute("data-row");
+      let col = cellToPlay.getAttribute("data-col");
+      switchTurns();
+      setTimeout(() => {
+        virtualBoard[row][col] = player2.getMark();
+        cellToPlay.classList.add(`${player2.getMark()}-taken`);
+        player2.addMove();
+        checkForWinner(player2, numberOfMoves);
+        updateBoardHoverEffects();
+      }, 500)
+
+    }
+    console.log(openCells);
+  }
+
   const checkForWinner = (player) => {
-    let isWinner = false;
-    let isDraw = false;
+
     numberOfMoves >= DRAW_LIMIT ? isDraw = true : isDraw = false;
     if (
       virtualBoard[0][0] == `${player.getMark()}` &&
@@ -271,6 +296,7 @@ const GameBoardModule = (() => {
       player.addWins();
       isWinner = true;
     }
+    console.log(virtualBoard);
     if (isWinner) {
       updateScoreBoard(player);
       resetHoverEffects()
@@ -278,7 +304,7 @@ const GameBoardModule = (() => {
       MessageBannerModule.addWinningPlayer(player);
       MessageBannerModule.updateBanner("Winner!", `${player.getPNumber()} Takes The Round!`, "Play Again", "Reset");
       MessageBannerModule.showBanner()
-      return;
+      return isWinner;
     } else if (isDraw) {
       draws++;
       updateDrawBoard();
@@ -286,7 +312,7 @@ const GameBoardModule = (() => {
       MessageBannerModule.init();
       MessageBannerModule.updateBanner("Draw", "Tie Game!", "Play Again", "Reset");
       MessageBannerModule.showBanner();
-      return;
+      return isDraw;
     }
 
   }
@@ -401,6 +427,8 @@ const GameBoardModule = (() => {
     resetVirtualBoard();
     resetBoardMoves();
     resetDrawBoard();
+    resetDrawWinner();
+    resetPlayers()
   }
 
   const softReset = () => {
@@ -409,6 +437,8 @@ const GameBoardModule = (() => {
     updateBoardHoverEffects();
     resetVirtualBoard();
     resetBoardMoves();
+    resetDrawBoard();
+    resetDrawWinner();
   }
 
   const resetBoardCells = () => {
@@ -450,7 +480,6 @@ const MessageBannerModule = (() => {
   }
 
   const die = () => {
-    console.log("Message Banner Killed");
     unbindEvents();
     removeWinningPlayer();
   }
@@ -506,6 +535,10 @@ const MessageBannerModule = (() => {
         GameBoardModule.hardReset();
         GameBoardModule.init(GameBoardModule.getLastMode());
       }
+      else if (clickedItem.innerHTML == "No") {
+        hideBanner();
+        die();
+      }
     }
     else if (clickedItem.getAttribute("data-banner-btn") == "confirm") {
       if (clickedItem.innerHTML == "Yes") {
@@ -519,7 +552,6 @@ const MessageBannerModule = (() => {
         hideBanner();
         die();
         GameBoardModule.softReset();
-
       }
     }
   }
