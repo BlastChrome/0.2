@@ -31,10 +31,10 @@ const newGameModule = (() => {
   //cache dom 
   const cacheDOM = () => {
     //get DOM Elements 
-    const newGameVsCpuBtn = document.getElementById("new-game-cpu");
+    // const newGameVsCpuBtn = document.getElementById("new-game-cpu");
     const newGameVsPlayer = document.getElementById("new-game-player");
     const markerSwitch = document.querySelector("#player-one-marker input");
-    return { newGameVsCpuBtn, newGameVsPlayer, markerSwitch }
+    return { newGameVsPlayer, markerSwitch }
   }
 
   // initialization function
@@ -50,7 +50,7 @@ const newGameModule = (() => {
   //bind the events to the modules clickable elements
   const bindEvents = () => {
     const { newGameVsCpuBtn, newGameVsPlayer, markerSwitch } = cacheDOM();
-    newGameVsCpuBtn.addEventListener('click', clickHandler);
+    // newGameVsCpuBtn.addEventListener('click', clickHandler);
     newGameVsPlayer.addEventListener('click', clickHandler);
     markerSwitch.addEventListener('click', markHandler);
   }
@@ -58,7 +58,7 @@ const newGameModule = (() => {
   //unbind the events when  the module is not in use 
   const unbindEvents = () => {
     const { newGameVsCpuBtn, newGameVsPlayer, markerSwitch } = cacheDOM();
-    newGameVsCpuBtn.removeEventListener('click', clickHandler);
+    // newGameVsCpuBtn.removeEventListener('click', clickHandler);
     newGameVsPlayer.removeEventListener('click', clickHandler);
     markerSwitch.removeEventListener('change', markHandler);
   }
@@ -160,6 +160,7 @@ const GameBoardModule = (() => {
     const clickedItem = e.target;
     //determine if the clicked target is a board cell, or the reset button  
     if (clickedItem.getAttribute("data-cell")) {
+
       const cell = clickedItem;
       if (getLastMode() == "vsPlayer") {
         if (isCellTaken(cell, player1) || isCellTaken(cell, player2)) {
@@ -169,9 +170,6 @@ const GameBoardModule = (() => {
         } else {
           playTurnVsPlayer(player2, cell)
         }
-      } else if (getLastMode() == "vsCpu") {
-        playTurnVsPlayer(player1, cell);
-        playTurnVsCpu(player2);
       }
 
     } else if (clickedItem.getAttribute("data-reset")) {
@@ -196,37 +194,11 @@ const GameBoardModule = (() => {
       cell.classList.add(`${player.getMark()}-taken`);
       player.addMove();
       addBoardMoves();
+      switchTurns()
       checkForWinner(player, numberOfMoves);
-      switchTurns();
       updateBoardHoverEffects();
       updateTurnDisplay();
     }
-  }
-
-  const playTurnVsCpu = () => {
-    const { cells } = cacheDOM();
-    //return an array of the open cells, if there are none it's a draw 
-    let openCells = Array.from(cells).filter((cell) => !((isCellTaken(cell, player1)) || (isCellTaken(cell, player2))));
-    if (openCells.length == 0) {
-      return;
-    } else if (checkForWinner(player2)) {
-      return;
-    }
-    else {
-      var cellToPlay = openCells[Math.floor(Math.random() * openCells.length)];
-      let row = cellToPlay.getAttribute("data-row");
-      let col = cellToPlay.getAttribute("data-col");
-      switchTurns();
-      setTimeout(() => {
-        virtualBoard[row][col] = player2.getMark();
-        cellToPlay.classList.add(`${player2.getMark()}-taken`);
-        player2.addMove();
-        checkForWinner(player2, numberOfMoves);
-        updateBoardHoverEffects();
-      }, 500)
-
-    }
-    console.log(openCells);
   }
 
   const checkForWinner = (player) => {
@@ -296,7 +268,6 @@ const GameBoardModule = (() => {
       player.addWins();
       isWinner = true;
     }
-    console.log(virtualBoard);
     if (isWinner) {
       updateScoreBoard(player);
       resetHoverEffects()
@@ -326,6 +297,7 @@ const GameBoardModule = (() => {
       }
     })
   }
+
   const updateDrawBoard = () => {
     const { tieDisplay } = cacheDOM();
     tieDisplay.querySelector("strong").innerHTML = draws;
